@@ -585,7 +585,30 @@ export interface SynaraStorageSnapshot {
   readonly entries: Readonly<Record<string, string>>;
 }
 
+export type DesktopPermission = "accessibility" | "screenRecording" | "inputMonitoring";
+export type DesktopPermissionFeature = "computer" | "appsnap";
+export interface DesktopPermissionSetupState {
+  readonly feature: DesktopPermissionFeature | null;
+  readonly phase: "idle" | "checking" | "waiting" | "complete" | "error";
+  readonly required: readonly DesktopPermission[];
+  readonly grants: Partial<Record<DesktopPermission, "granted" | "denied">>;
+  readonly current: DesktopPermission | null;
+  readonly appName: string;
+  readonly appPath: string | null;
+  readonly message: string | null;
+}
+
 export interface DesktopBridge {
+  /** User-driven macOS setup, shared by Computer and AppSnap. Never enables agent control. */
+  permissions?: {
+    getState: () => Promise<DesktopPermissionSetupState>;
+    start: (feature: DesktopPermissionFeature) => Promise<DesktopPermissionSetupState>;
+    stop: () => Promise<void>;
+    retry: () => Promise<void>;
+    revealApp: () => Promise<void>;
+    startDrag: () => void;
+    onState: (listener: (state: DesktopPermissionSetupState) => void) => () => void;
+  };
   getWsUrl: () => string | null;
   /**
    * Absolute filesystem path for a File from drag/drop or file inputs.
